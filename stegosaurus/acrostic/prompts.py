@@ -1,7 +1,4 @@
-from dotenv import load_dotenv
 from langchain.prompts import PromptTemplate
-
-load_dotenv()
 
 acrostic_generator_prompt = PromptTemplate(
     input_variables=["original_text", "acrostic_phrase", "rewritten_text", "current_starting_letter"],
