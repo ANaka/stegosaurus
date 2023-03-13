@@ -4,9 +4,9 @@ from pydantic import BaseModel
 class AcrosticGeneratorInputs(BaseModel):
     original_text: str
     acrostic_phrase: str
-    rewritten_text: str
-    acrostic_letter_index: int
-    n_attempts: int
+    rewritten_text: str = ""
+    acrostic_letter_index: int = 0
+    n_attempts: int = 5
 
     def __repr__(self) -> str:
         original_sentences = self.original_text.strip().split(".")
