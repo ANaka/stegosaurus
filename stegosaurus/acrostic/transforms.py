@@ -18,12 +18,73 @@ def _get_current_original_sentence(inputs):
     return {"current_original_sentence": sentences[acrostic_letter_index]}
 
 
-def _split_into_sentences(inputs):
+def _split_numbered_list(inputs):
     text = inputs["generated_sentence_options"]
     sentences = re.split(r"(?<=[.?!])\s+(?=[0-9])", text)
-    sentences = [s.strip() for s in sentences]
+    sentences = [s.strip() for s in sentences if len(s) > 0]
     sentences = [re.sub(r"^[0-9]+\.\s*", "", s) for s in sentences]
 
+    return {"generated_sentence_options_list": sentences}
+
+
+def _split_bulleted_list(inputs):
+    text = inputs["original_text_summary"]
+    # split on newlines
+    sentences = [s for s in text.split("\n") if len(s) > 0]
+
+    return {"original_text_summary_list": sentences}
+
+
+def _get_current_idea(inputs):
+    acrostic_letter_index = inputs["acrostic_letter_index"]
+    idea = inputs["original_text_summary_list"]
+    return {"current_idea": idea[acrostic_letter_index]}
+
+
+alphabets = "([A-Za-z])"
+prefixes = "(Mr|St|Mrs|Ms|Dr)[.]"
+suffixes = "(Inc|Ltd|Jr|Sr|Co)"
+starters = (
+    "(Mr|Mrs|Ms|Dr|Prof|Capt|Cpt|Lt|He\s|She\s|It\s|They\s|Their\s|Our\s|We\s|But\s|However\s|That\s|This\s|Wherever)"
+)
+acronyms = "([A-Z][.][A-Z][.](?:[A-Z][.])?)"
+websites = "[.](com|net|org|io|gov|edu|me)"
+digits = "([0-9])"
+
+
+def _split_into_sentences(inputs):
+    text = inputs["generated_sentence_options"]
+    text = " " + text + "  "
+    text = text.replace("\n", " ")
+    text = re.sub(prefixes, "\\1<prd>", text)
+    text = re.sub(websites, "<prd>\\1", text)
+    text = re.sub(digits + "[.]" + digits, "\\1<prd>\\2", text)
+    if "..." in text:
+        text = text.replace("...", "<prd><prd><prd>")
+    if "Ph.D" in text:
+        text = text.replace("Ph.D.", "Ph<prd>D<prd>")
+    text = re.sub("\s" + alphabets + "[.] ", " \\1<prd> ", text)
+    text = re.sub(acronyms + " " + starters, "\\1<stop> \\2", text)
+    text = re.sub(alphabets + "[.]" + alphabets + "[.]" + alphabets + "[.]", "\\1<prd>\\2<prd>\\3<prd>", text)
+    text = re.sub(alphabets + "[.]" + alphabets + "[.]", "\\1<prd>\\2<prd>", text)
+    text = re.sub(" " + suffixes + "[.] " + starters, " \\1<stop> \\2", text)
+    text = re.sub(" " + suffixes + "[.]", " \\1<prd>", text)
+    text = re.sub(" " + alphabets + "[.]", " \\1<prd>", text)
+    if "”" in text:
+        text = text.replace(".”", "”.")
+    if '"' in text:
+        text = text.replace('."', '".')
+    if "!" in text:
+        text = text.replace('!"', '"!')
+    if "?" in text:
+        text = text.replace('?"', '"?')
+    text = text.replace(".", ".<stop>")
+    text = text.replace("?", "?<stop>")
+    text = text.replace("!", "!<stop>")
+    text = text.replace("<prd>", ".")
+    sentences = text.split("<stop>")
+    sentences = sentences[:-1]
+    sentences = [s.strip() for s in sentences]
     return {"generated_sentence_options_list": sentences}
 
 
@@ -66,11 +127,22 @@ get_current_original_sentence = TransformChain(
     output_variables=["current_original_sentence"],
 )
 
+get_current_idea = TransformChain(
+    input_variables=["original_text_summary_list", "acrostic_letter_index"],
+    transform=_get_current_idea,
+    output_variables=["current_idea"],
+)
 
-split_into_sentences = TransformChain(
+split_numbered_list = TransformChain(
     input_variables=["generated_sentence_options"],
-    transform=_split_into_sentences,
+    transform=_split_numbered_list,
     output_variables=["generated_sentence_options_list"],
+)
+
+split_bulleted_list = TransformChain(
+    input_variables=["original_text_summary"],
+    transform=_split_bulleted_list,
+    output_variables=["original_text_summary_list"],
 )
 
 generate_clean_options = TransformChain(
