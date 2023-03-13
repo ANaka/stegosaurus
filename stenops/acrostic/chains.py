@@ -2,8 +2,8 @@ from dotenv import load_dotenv
 from langchain.chains import LLMChain, SequentialChain
 from langchain.llms import OpenAI
 
-from stegosaurus.acrostic import transforms as t
-from stegosaurus.acrostic.prompts import (
+from stenops.acrostic import transforms as t
+from stenops.acrostic.prompts import (
     acrostic_evaluator_prompt,
     multi_acrostic_generator_prompt,
     original_text_contextualizer_prompt,
@@ -102,30 +102,31 @@ evaluator_chain = SequentialChain(
 )
 
 
-full_chain = SequentialChain(
-    chains=[
-        generator_chain,
-        evaluator_chain,
-    ],
-    input_variables=[
-        "original_text",
-        "acrostic_phrase",
-        "rewritten_text",
-        "acrostic_letter_index",
-        "n_attempts",
-    ],
-    output_variables=[
-        "original_text_summary",
-        "original_text_context",
-        "current_starting_letter",
-        # "current_idea",
-        "current_original_sentence",
-        "generated_sentence_options",
-        "generated_sentence_options_list",
-        "clean_options",
-        "evaluator_output",
-        "evaluator_selection",
-        "next_action",
-    ],
-    verbose=False,
-)
+def get_full_chain():
+    return SequentialChain(
+        chains=[
+            generator_chain,
+            evaluator_chain,
+        ],
+        input_variables=[
+            "original_text",
+            "acrostic_phrase",
+            "rewritten_text",
+            "acrostic_letter_index",
+            "n_attempts",
+        ],
+        output_variables=[
+            "original_text_summary",
+            "original_text_context",
+            "current_starting_letter",
+            # "current_idea",
+            "current_original_sentence",
+            "generated_sentence_options",
+            "generated_sentence_options_list",
+            "clean_options",
+            "evaluator_output",
+            "evaluator_selection",
+            "next_action",
+        ],
+        verbose=False,
+    )
