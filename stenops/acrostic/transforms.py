@@ -32,6 +32,12 @@ def _split_bulleted_list(inputs):
     # split on newlines
     sentences = [s for s in text.split("\n") if len(s) > 0]
 
+    # remove bullets
+    sentences = [s.replace("-", "").strip() for s in sentences]
+
+    # remove empty sentences
+    sentences = [s for s in sentences if len(s) > 0]
+
     return {"original_text_summary_list": sentences}
 
 
