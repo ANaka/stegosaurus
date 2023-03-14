@@ -1,12 +1,26 @@
-from pydantic import BaseModel
+from typing import Optional
+
+from pydantic import BaseModel, validator
 
 
 class AcrosticGeneratorInputs(BaseModel):
     original_text: str
     acrostic_phrase: str
-    rewritten_text: str = ""
-    acrostic_letter_index: int = 0
-    n_attempts: int = 5
+    rewritten_text: Optional[str] = ""
+    acrostic_letter_index: Optional[int] = 0
+    n_attempts: Optional[int] = 5
+
+    @validator("rewritten_text", pre=True, always=True)
+    def set_rewritten_text(cls, v):
+        return v or ""
+
+    @validator("acrostic_letter_index", pre=True, always=True)
+    def set_acrostic_letter_index(cls, v):
+        return v or 0
+
+    @validator("n_attempts", pre=True, always=True)
+    def set_n_attempts(cls, v):
+        return v or 5
 
     def __repr__(self) -> str:
         original_sentences = self.original_text.strip().split(".")
