@@ -1,30 +1,32 @@
-from dotenv import load_dotenv
+from functools import partial
+
 from langchain.chains import LLMChain, SequentialChain
 from langchain.llms import OpenAI
 
-from stegosaurus.acrostic import transforms as t
-from stegosaurus.acrostic.prompts import (
+from stenops.acrostic import transforms as t
+from stenops.acrostic.prompts import (
     acrostic_evaluator_prompt,
     multi_acrostic_generator_prompt,
     original_text_contextualizer_prompt,
     original_text_summarizer_prompt,
 )
 
-load_dotenv()
-
-original_text_summarizer_chain = LLMChain(
+OriginalTextSummarizerChain = partial(
+    LLMChain,
     llm=OpenAI(model_name="gpt-3.5-turbo", temperature=0.7),
     prompt=original_text_summarizer_prompt,
     output_key="original_text_summary",
 )
 
-original_text_contextualizer_chain = LLMChain(
+OriginalTextContextualizerChain = partial(
+    LLMChain,
     llm=OpenAI(model_name="gpt-3.5-turbo", temperature=0.7),
     prompt=original_text_contextualizer_prompt,
     output_key="original_text_context",
 )
 
-acrostic_generator_chain = LLMChain(
+AcrosticGeneratorChain = partial(
+    LLMChain,
     llm=OpenAI(
         model_name="gpt-3.5-turbo",
         temperature=0.7,
@@ -33,23 +35,23 @@ acrostic_generator_chain = LLMChain(
     output_key="generated_sentence_options",
 )
 
-
-acrostic_evaluator_chain = LLMChain(
+AcrosticEvaluatorChain = partial(
+    LLMChain,
     llm=OpenAI(model_name="gpt-3.5-turbo", temperature=0.7),
     prompt=acrostic_evaluator_prompt,
     output_key="evaluator_output",
 )
 
-
-generator_chain = SequentialChain(
+GeneratorChain = partial(
+    SequentialChain,
     chains=[
-        original_text_summarizer_chain,
-        original_text_contextualizer_chain,
+        OriginalTextSummarizerChain(),
+        OriginalTextContextualizerChain(),
         t.split_bulleted_list,
         t.get_current_acrostic_letter,
         # t.get_current_idea,
         t.get_current_original_sentence,
-        acrostic_generator_chain,
+        AcrosticGeneratorChain(),
         t.split_numbered_list,
         t.generate_clean_options,
     ],
@@ -70,11 +72,13 @@ generator_chain = SequentialChain(
         "generated_sentence_options_list",
         "clean_options",
     ],
+    verbose=False,
 )
 
-evaluator_chain = SequentialChain(
+EvaluatorChain = partial(
+    SequentialChain,
     chains=[
-        acrostic_evaluator_chain,
+        AcrosticEvaluatorChain(),
         t.extract_selection,
         t.resolve_next_action,
     ],
@@ -102,10 +106,11 @@ evaluator_chain = SequentialChain(
 )
 
 
-full_chain = SequentialChain(
+FullChain = partial(
+    SequentialChain,
     chains=[
-        generator_chain,
-        evaluator_chain,
+        GeneratorChain(),
+        EvaluatorChain(),
     ],
     input_variables=[
         "original_text",
